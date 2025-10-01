@@ -30,6 +30,11 @@ class IntakeScheduler {
     const dayOfWeek = today.getDay();
 
     try {
+      // Get all schedules first for debugging
+      const allSchedules = await db.schedules.toArray();
+      console.log(`📅 Total schedules in DB: ${allSchedules.length}`, allSchedules);
+      console.log(`📅 Today is day: ${dayOfWeek} (0=Sunday, 1=Monday, etc.)`);
+
       // Get all active schedules for today's weekday
       const activeSchedules = await db.schedules
         .filter(schedule =>
@@ -37,6 +42,8 @@ class IntakeScheduler {
           schedule.daysOfWeek.includes(dayOfWeek)
         )
         .toArray();
+
+      console.log(`📅 Active schedules for today: ${activeSchedules.length}`, activeSchedules);
 
       // Check which intakes already exist for today
       const existingIntakes = await db.intakes
@@ -46,18 +53,22 @@ class IntakeScheduler {
         })
         .toArray();
 
+      console.log(`📅 Existing intakes for today: ${existingIntakes.length}`, existingIntakes);
+
       const existingScheduleIds = new Set(existingIntakes.map(i => i.scheduleId));
 
       // Create new intakes for schedules that don't have one yet
+      let created = 0;
       for (const schedule of activeSchedules) {
         if (!existingScheduleIds.has(schedule.id)) {
           await this.createIntakeForSchedule(schedule, today);
+          created++;
         }
       }
 
-      console.log(`✅ Generated ${activeSchedules.length - existingScheduleIds.size} new intakes for today`);
+      console.log(`✅ Generated ${created} new intakes for today`);
     } catch (error) {
-      console.error('Error generating daily intakes:', error);
+      console.error('❌ Error generating daily intakes:', error);
     }
   }
 
@@ -73,16 +84,20 @@ class IntakeScheduler {
     const now = new Date();
 
     // Determine status based on current time
-    const status = plannedTime < now ? 'missed' : 'pending';
+    const status: 'pending' | 'missed' = plannedTime < now ? 'missed' : 'pending';
 
-    await db.intakes.add({
+    const intake = {
       id,
       medicationId: schedule.medicationId,
       scheduleId: schedule.id,
       plannedTime,
       status,
       createdAt: new Date()
-    });
+    };
+
+    console.log('➕ Creating intake:', intake);
+
+    await db.intakes.add(intake);
   }
 
   /**
