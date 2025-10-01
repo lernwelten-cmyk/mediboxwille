@@ -81,9 +81,9 @@ function App() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-gray-200 shadow-lg">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+      {/* Bottom Navigation - iPhone Safe-Area optimiert */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-gray-200 shadow-lg" style={{ paddingBottom: 'var(--safe-area-bottom)' }}>
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant={currentView === 'today' ? 'primary' : 'secondary'}
@@ -107,8 +107,8 @@ function App() {
         </div>
       </nav>
 
-      {/* Bottom spacer for fixed navigation */}
-      <div className="h-32" />
+      {/* Bottom spacer for fixed navigation + iPhone Home Indicator */}
+      <div className="h-32" style={{ paddingBottom: 'var(--safe-area-bottom)' }} />
     </div>
   );
 }
