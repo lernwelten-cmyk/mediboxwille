@@ -5,6 +5,7 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/services/storage/database';
+import { intakeScheduler } from '@/services/scheduler/intakeScheduler';
 import type { Schedule } from '@/types';
 
 export function useSchedule() {
@@ -21,6 +22,9 @@ export function useSchedule() {
       updatedAt: now
     });
 
+    // Trigger intake generation for today
+    await intakeScheduler.generateTodaysIntakes();
+
     return id;
   };
 
@@ -29,6 +33,9 @@ export function useSchedule() {
       ...updates,
       updatedAt: new Date()
     });
+
+    // Trigger intake generation for today
+    await intakeScheduler.generateTodaysIntakes();
   };
 
   const deleteSchedule = async (id: string): Promise<void> => {
@@ -46,6 +53,7 @@ export function useSchedule() {
     const schedule = await db.schedules.get(id);
     if (schedule) {
       await updateSchedule(id, { isActive: !schedule.isActive });
+      // updateSchedule already triggers intake generation
     }
   };
 

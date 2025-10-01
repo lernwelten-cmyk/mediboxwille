@@ -69,19 +69,20 @@ class IntakeScheduler {
     const plannedTime = new Date(date);
     plannedTime.setHours(hours, minutes, 0, 0);
 
-    // Only create if time hasn't passed yet
-    if (plannedTime > new Date()) {
-      const id = crypto.randomUUID();
+    const id = crypto.randomUUID();
+    const now = new Date();
 
-      await db.intakes.add({
-        id,
-        medicationId: schedule.medicationId,
-        scheduleId: schedule.id,
-        plannedTime,
-        status: 'pending',
-        createdAt: new Date()
-      });
-    }
+    // Determine status based on current time
+    const status = plannedTime < now ? 'missed' : 'pending';
+
+    await db.intakes.add({
+      id,
+      medicationId: schedule.medicationId,
+      scheduleId: schedule.id,
+      plannedTime,
+      status,
+      createdAt: new Date()
+    });
   }
 
   /**
