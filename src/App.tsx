@@ -6,14 +6,18 @@
 import { useState, useEffect } from 'react';
 import { TodayView } from './features/schedule/TodayView';
 import { MedicationList } from './features/medications/MedicationList';
+import { MedicationDetail } from './features/medications/MedicationDetail';
 import { Button } from './components/Button';
 import { initializeSettings } from './services/storage/database';
 import { notificationService } from './services/notifications/notificationService';
+import { intakeScheduler } from './services/scheduler/intakeScheduler';
+import { notificationScheduler } from './services/scheduler/notificationScheduler';
 
-type View = 'today' | 'medications' | 'settings';
+type View = 'today' | 'medications' | 'medication-detail';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('today');
+  const [selectedMedicationId, setSelectedMedicationId] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
@@ -22,11 +26,25 @@ function App() {
 
     // Check notification permission
     setNotificationsEnabled(notificationService.isSupported());
+
+    // Start automatic schedulers
+    intakeScheduler.startAutoScheduling();
+    notificationScheduler.startAutoScheduling();
   }, []);
 
   const handleRequestNotifications = async () => {
     const permission = await notificationService.requestPermission();
     setNotificationsEnabled(permission === 'granted');
+  };
+
+  const handleSelectMedication = (id: string) => {
+    setSelectedMedicationId(id);
+    setCurrentView('medication-detail');
+  };
+
+  const handleBackToMedications = () => {
+    setSelectedMedicationId(null);
+    setCurrentView('medications');
   };
 
   return (
@@ -52,7 +70,15 @@ function App() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         {currentView === 'today' && <TodayView />}
-        {currentView === 'medications' && <MedicationList />}
+        {currentView === 'medications' && (
+          <MedicationList onSelectMedication={handleSelectMedication} />
+        )}
+        {currentView === 'medication-detail' && selectedMedicationId && (
+          <MedicationDetail
+            medicationId={selectedMedicationId}
+            onBack={handleBackToMedications}
+          />
+        )}
       </div>
 
       {/* Bottom Navigation */}

@@ -8,7 +8,7 @@ import { useMedications } from '@/hooks/useMedications';
 import { useIntakes } from '@/hooks/useIntakes';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
-import { notificationService } from '@/services/notifications/notificationService';
+import { notificationScheduler } from '@/services/scheduler/notificationScheduler';
 import { SNOOZE_DURATIONS } from '@/constants';
 import type { Intake } from '@/types';
 
@@ -16,7 +16,6 @@ export const TodayView: React.FC = () => {
   const { medications } = useMedications();
   const {
     getTodaysIntakes,
-    markIntakeCompleted,
     snoozeIntake
   } = useIntakes();
 
@@ -35,16 +34,10 @@ export const TodayView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const getMedicationName = (medicationId: string): string => {
-    return medications.find(m => m.id === medicationId)?.name || 'Unbekannt';
-  };
-
   const handleComplete = async (intake: Intake) => {
-    await markIntakeCompleted(intake.id);
+    // Use notificationScheduler which handles completion + fasting notifications
+    await notificationScheduler.markIntakeCompletedWithNotification(intake.id);
     setTodaysIntakes(getTodaysIntakes());
-    notificationService.sendFastingEndNotification(
-      getMedicationName(intake.medicationId)
-    );
   };
 
   const handleSnooze = async (intakeId: string, minutes: number) => {

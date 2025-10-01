@@ -9,7 +9,13 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { MedicationForm } from './MedicationForm';
 
-export const MedicationList: React.FC = () => {
+interface MedicationListProps {
+  onSelectMedication?: (id: string) => void;
+}
+
+export const MedicationList: React.FC<MedicationListProps> = ({
+  onSelectMedication
+}) => {
   const { medications, deleteMedication } = useMedications();
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -104,6 +110,15 @@ export const MedicationList: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2">
+                  {onSelectMedication && (
+                    <Button
+                      variant="primary"
+                      size="small"
+                      onClick={() => onSelectMedication(medication.id)}
+                    >
+                      ⚙️
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     size="small"

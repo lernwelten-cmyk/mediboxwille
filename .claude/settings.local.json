@@ -7,7 +7,9 @@
       "Bash(npx create-vite:*)",
       "Bash(npm install)",
       "Bash(npm run build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: MediBox PWA - Medikamenten-Erinnerungs-App\n\nImplementierte Features:\n- 💊 Medikamentenverwaltung (CRUD)\n- ⏰ Einnahme-Zeiten mit Wochentags-Planung\n- 🍽️ Nüchtern-Einnahme mit Ess-Zeitfenstern\n- 🔔 Push-Benachrichtigungen für Medikamente und Essen\n- 📊 Einnahme-Tracking (erledigt, verschoben, überfällig)\n- ♿ Senioren-freundliches Design (große Schrift, hoher Kontrast, große Buttons)\n- 📱 PWA mit Offline-Support (IndexedDB)\n\nTech-Stack:\n- React 18 + TypeScript\n- Vite + Tailwind CSS\n- Dexie.js (IndexedDB)\n- Vite PWA Plugin\n\nArchitektur:\n- Modulare Struktur nach DEVELOPMENT.md\n- Komponenten-basiert mit klaren Schnittstellen\n- Offline-first mit lokaler Datenspeicherung\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
