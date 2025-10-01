@@ -38,7 +38,7 @@ export const ScheduleForm: React.FC<ScheduleFormProps> = ({
     if (scheduleId) {
       loadSchedule();
     }
-  }, [scheduleId]);
+  }, [scheduleId, schedules]);
 
   const loadSchedule = async () => {
     const schedule = schedules.find(s => s.id === scheduleId);
