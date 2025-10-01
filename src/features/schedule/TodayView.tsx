@@ -4,6 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/services/storage/database';
 import { useMedications } from '@/hooks/useMedications';
 import { useIntakes } from '@/hooks/useIntakes';
 import { Card } from '@/components/Card';
@@ -14,21 +16,30 @@ import type { Intake } from '@/types';
 
 export const TodayView: React.FC = () => {
   const { medications } = useMedications();
-  const {
-    getTodaysIntakes,
-    snoozeIntake
-  } = useIntakes();
+  const { snoozeIntake } = useIntakes();
 
-  const [todaysIntakes, setTodaysIntakes] = useState<Intake[]>([]);
+  // Use useLiveQuery to get real-time updates from IndexedDB
+  const allIntakes = useLiveQuery(() => db.intakes.toArray()) ?? [];
+
+  // Filter for today's intakes
+  const todaysIntakes = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return allIntakes.filter(intake => {
+      const intakeDate = new Date(intake.plannedTime);
+      return intakeDate >= today && intakeDate < tomorrow;
+    });
+  }, [allIntakes]);
+
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    setTodaysIntakes(getTodaysIntakes());
-
     // Update current time every minute
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-      setTodaysIntakes(getTodaysIntakes());
     }, 60000);
 
     return () => clearInterval(interval);
@@ -37,12 +48,12 @@ export const TodayView: React.FC = () => {
   const handleComplete = async (intake: Intake) => {
     // Use notificationScheduler which handles completion + fasting notifications
     await notificationScheduler.markIntakeCompletedWithNotification(intake.id);
-    setTodaysIntakes(getTodaysIntakes());
+    // useLiveQuery will automatically update the view
   };
 
   const handleSnooze = async (intakeId: string, minutes: number) => {
     await snoozeIntake(intakeId, minutes);
-    setTodaysIntakes(getTodaysIntakes());
+    // useLiveQuery will automatically update the view
   };
 
   const formatTime = (date: Date): string => {
