@@ -43,6 +43,13 @@ export function useIntakes() {
     });
   };
 
+  const uncompleteIntake = async (id: string): Promise<void> => {
+    await db.intakes.update(id, {
+      status: 'pending',
+      actualTime: undefined
+    });
+  };
+
   const getTodaysIntakes = (): Intake[] => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -90,6 +97,7 @@ export function useIntakes() {
     markIntakeCompleted,
     markIntakeMissed,
     snoozeIntake,
+    uncompleteIntake,
     getTodaysIntakes,
     getUpcomingIntakes,
     getIntakeStats

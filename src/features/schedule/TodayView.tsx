@@ -16,7 +16,7 @@ import type { Intake } from '@/types';
 
 export const TodayView: React.FC = () => {
   const { medications } = useMedications();
-  const { snoozeIntake } = useIntakes();
+  const { snoozeIntake, uncompleteIntake } = useIntakes();
 
   // Use useLiveQuery to get real-time updates from IndexedDB
   const allIntakes = useLiveQuery(() => db.intakes.toArray()) ?? [];
@@ -74,6 +74,16 @@ export const TodayView: React.FC = () => {
   const pendingIntakes = sortedIntakes.filter(i => i.status === 'pending' || i.status === 'snoozed');
   const completedIntakes = sortedIntakes.filter(i => i.status === 'completed');
 
+  // Group pending intakes by time
+  const groupedPendingIntakes = pendingIntakes.reduce((groups, intake) => {
+    const timeKey = formatTime(intake.plannedTime);
+    if (!groups[timeKey]) {
+      groups[timeKey] = [];
+    }
+    groups[timeKey].push(intake);
+    return groups;
+  }, {} as Record<string, Intake[]>);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -89,81 +99,82 @@ export const TodayView: React.FC = () => {
         </p>
       </div>
 
-      {/* Pending Intakes */}
+      {/* Pending Intakes - Grouped by Time */}
       {pendingIntakes.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-senior-xl font-bold">Anstehend</h2>
-          {pendingIntakes.map(intake => {
-            const medication = medications.find(m => m.id === intake.medicationId);
-            const overdue = isOverdue(intake.plannedTime);
+          {Object.entries(groupedPendingIntakes).map(([time, intakes]) => {
+            const anyOverdue = intakes.some(i => isOverdue(i.plannedTime));
 
             return (
               <Card
-                key={intake.id}
+                key={time}
                 padding="large"
-                className={overdue ? 'border-4 border-red-500' : ''}
+                className={anyOverdue ? 'border-4 border-red-500' : ''}
               >
                 <div className="space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {medication?.color && (
-                        <div
-                          className="w-12 h-12 rounded-full border-2 border-gray-300"
-                          style={{ backgroundColor: medication.color }}
-                        />
-                      )}
-                      <div>
-                        <h3 className="text-senior-xl font-bold">
-                          {medication?.name}
-                        </h3>
-                        <p className="text-senior-lg text-gray-700">
-                          {medication?.dosage}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-senior-xl font-bold ${overdue ? 'text-red-600' : 'text-blue-600'}`}>
-                        {formatTime(intake.plannedTime)}
+                  {/* Time Header */}
+                  <div className="flex items-center justify-between pb-3 border-b-2 border-gray-200">
+                    <p className={`text-senior-2xl font-bold ${anyOverdue ? 'text-red-600' : 'text-blue-600'}`}>
+                      {time}
+                    </p>
+                    {anyOverdue && (
+                      <p className="text-senior-base text-red-600 font-semibold">
+                        Überfällig!
                       </p>
-                      {overdue && (
-                        <p className="text-senior-base text-red-600 font-semibold">
-                          Überfällig!
-                        </p>
-                      )}
-                      {intake.status === 'snoozed' && intake.snoozedUntil && (
-                        <p className="text-senior-base text-orange-600">
-                          Verschoben bis {formatTime(intake.snoozedUntil)}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="space-y-2">
-                    <Button
-                      variant="success"
-                      size="large"
-                      icon="✓"
-                      onClick={() => handleComplete(intake)}
-                      fullWidth
-                    >
-                      Eingenommen
-                    </Button>
+                  {/* Medications at this time */}
+                  {intakes.map(intake => {
+                    const medication = medications.find(m => m.id === intake.medicationId);
 
-                    <div className="grid grid-cols-3 gap-2">
-                      {SNOOZE_DURATIONS.map(duration => (
-                        <Button
-                          key={duration.value}
-                          variant="warning"
-                          size="small"
-                          onClick={() => handleSnooze(intake.id, duration.value)}
-                        >
-                          +{duration.value}m
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
+                    return (
+                      <div key={intake.id} className="space-y-3">
+                        {/* Medication Info with Toggle */}
+                        <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div>
+                              <h3 className="text-senior-xl font-bold">
+                                {medication?.name}
+                              </h3>
+                              <p className="text-senior-lg text-gray-700">
+                                {medication?.dosage}
+                              </p>
+                              {intake.status === 'snoozed' && intake.snoozedUntil && (
+                                <p className="text-senior-base text-orange-600 mt-1">
+                                  Verschoben bis {formatTime(intake.snoozedUntil)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Checkbox Toggle */}
+                          <button
+                            onClick={() => handleComplete(intake)}
+                            className="w-16 h-16 rounded-lg border-4 border-gray-400 bg-white flex items-center justify-center hover:bg-green-50 hover:border-green-600 transition-all active:scale-95"
+                            aria-label="Als eingenommen markieren"
+                          >
+                            <span className="text-4xl text-gray-400">☐</span>
+                          </button>
+                        </div>
+
+                        {/* Snooze Buttons */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {SNOOZE_DURATIONS.map(duration => (
+                            <Button
+                              key={duration.value}
+                              variant="warning"
+                              size="small"
+                              onClick={() => handleSnooze(intake.id, duration.value)}
+                            >
+                              +{duration.value}m
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </Card>
             );
@@ -182,23 +193,27 @@ export const TodayView: React.FC = () => {
 
             return (
               <Card key={intake.id} padding="normal" className="opacity-75">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">✓</span>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1">
                     <div>
                       <p className="text-senior-lg font-semibold">
                         {medication?.name}
                       </p>
                       <p className="text-senior-base text-gray-600">
-                        {formatTime(intake.plannedTime)}
+                        Geplant: {formatTime(intake.plannedTime)}
+                        {intake.actualTime && ` • Eingenommen: ${formatTime(intake.actualTime)}`}
                       </p>
                     </div>
                   </div>
-                  {intake.actualTime && (
-                    <p className="text-senior-base text-green-700">
-                      {formatTime(intake.actualTime)}
-                    </p>
-                  )}
+
+                  {/* Checkbox Toggle - Checked */}
+                  <button
+                    onClick={() => uncompleteIntake(intake.id)}
+                    className="w-12 h-12 rounded-lg border-4 border-green-600 bg-green-50 flex items-center justify-center hover:bg-green-100 transition-all active:scale-95"
+                    aria-label="Wieder aktivieren"
+                  >
+                    <span className="text-3xl text-green-600">☑</span>
+                  </button>
                 </div>
               </Card>
             );

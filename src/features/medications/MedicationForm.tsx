@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/Button';
-import { MEDICATION_COLORS } from '@/constants';
 
 interface MedicationFormProps {
   medicationId?: string | null;
@@ -23,10 +22,7 @@ export const MedicationForm: React.FC<MedicationFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     dosage: '',
-    color: '',
-    description: '',
-    stock: '',
-    lowStockThreshold: '10'
+    description: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -45,10 +41,7 @@ export const MedicationForm: React.FC<MedicationFormProps> = ({
       setFormData({
         name: medication.name,
         dosage: medication.dosage,
-        color: medication.color || '',
-        description: medication.description || '',
-        stock: medication.stock?.toString() || '',
-        lowStockThreshold: medication.lowStockThreshold?.toString() || '10'
+        description: medication.description || ''
       });
     }
   };
@@ -61,10 +54,7 @@ export const MedicationForm: React.FC<MedicationFormProps> = ({
       const data = {
         name: formData.name,
         dosage: formData.dosage,
-        color: formData.color || undefined,
-        description: formData.description || undefined,
-        stock: formData.stock ? parseInt(formData.stock) : undefined,
-        lowStockThreshold: formData.lowStockThreshold ? parseInt(formData.lowStockThreshold) : undefined
+        description: formData.description || undefined
       };
 
       if (medicationId) {
@@ -124,32 +114,6 @@ export const MedicationForm: React.FC<MedicationFormProps> = ({
           />
         </div>
 
-        {/* Color */}
-        <div>
-          <label className="block text-senior-lg font-semibold mb-2">
-            Farbe (optional)
-          </label>
-          <div className="grid grid-cols-4 gap-3">
-            {MEDICATION_COLORS.map(color => (
-              <button
-                key={color.value}
-                type="button"
-                onClick={() => handleChange('color', color.hex)}
-                className={`p-4 rounded-lg border-4 transition-all ${
-                  formData.color === color.hex
-                    ? 'border-blue-600 scale-105'
-                    : 'border-gray-300'
-                }`}
-                style={{ backgroundColor: color.hex }}
-              >
-                <span className="text-senior-base font-semibold">
-                  {color.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Description */}
         <div>
           <label className="block text-senior-lg font-semibold mb-2">
@@ -162,35 +126,6 @@ export const MedicationForm: React.FC<MedicationFormProps> = ({
             placeholder="z.B. Gegen Kopfschmerzen"
             rows={3}
           />
-        </div>
-
-        {/* Stock */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-senior-lg font-semibold mb-2">
-              Bestand (optional)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={formData.stock}
-              onChange={(e) => handleChange('stock', e.target.value)}
-              className="w-full px-6 py-4 text-senior-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-              placeholder="Anzahl"
-            />
-          </div>
-          <div>
-            <label className="block text-senior-lg font-semibold mb-2">
-              Warnung bei
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={formData.lowStockThreshold}
-              onChange={(e) => handleChange('lowStockThreshold', e.target.value)}
-              className="w-full px-6 py-4 text-senior-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-          </div>
         </div>
 
         {/* Actions */}

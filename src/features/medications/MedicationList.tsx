@@ -21,9 +21,9 @@ export const MedicationList: React.FC<MedicationListProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const filteredMedications = medications.filter(med =>
-    med.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMedications = medications
+    .filter(med => med.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleEdit = (id: string) => {
     setEditingId(id);
@@ -80,16 +80,7 @@ export const MedicationList: React.FC<MedicationListProps> = ({
             <Card key={medication.id} padding="large">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    {/* Color indicator */}
-                    {medication.color && (
-                      <div
-                        className="w-8 h-8 rounded-full border-2 border-gray-300"
-                        style={{ backgroundColor: medication.color }}
-                      />
-                    )}
-                    <h3 className="text-senior-xl font-bold">{medication.name}</h3>
-                  </div>
+                  <h3 className="text-senior-xl font-bold mb-2">{medication.name}</h3>
 
                   <p className="text-senior-lg text-gray-700 mb-2">
                     {medication.dosage}
@@ -98,12 +89,6 @@ export const MedicationList: React.FC<MedicationListProps> = ({
                   {medication.description && (
                     <p className="text-senior-base text-gray-600">
                       {medication.description}
-                    </p>
-                  )}
-
-                  {medication.stock !== undefined && (
-                    <p className="text-senior-base text-gray-600 mt-2">
-                      Bestand: {medication.stock} Stück
                     </p>
                   )}
                 </div>
@@ -116,7 +101,7 @@ export const MedicationList: React.FC<MedicationListProps> = ({
                       size="small"
                       onClick={() => onSelectMedication(medication.id)}
                     >
-                      ⚙️
+                      🕐
                     </Button>
                   )}
                   <Button
