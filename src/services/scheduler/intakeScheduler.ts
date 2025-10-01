@@ -55,18 +55,45 @@ class IntakeScheduler {
 
       console.log(`📅 Existing intakes for today: ${existingIntakes.length}`, existingIntakes);
 
-      const existingScheduleIds = new Set(existingIntakes.map(i => i.scheduleId));
+      const existingIntakesBySchedule = new Map(
+        existingIntakes.map(i => [i.scheduleId, i])
+      );
 
-      // Create new intakes for schedules that don't have one yet
+      // Create new intakes or update existing ones
       let created = 0;
+      let updated = 0;
       for (const schedule of activeSchedules) {
-        if (!existingScheduleIds.has(schedule.id)) {
+        const existingIntake = existingIntakesBySchedule.get(schedule.id);
+
+        if (!existingIntake) {
+          // No intake exists yet - create new one
           await this.createIntakeForSchedule(schedule, today);
           created++;
+        } else {
+          // Intake exists - check if time matches schedule
+          const [hours, minutes] = schedule.time.split(':').map(Number);
+          const expectedTime = new Date(today);
+          expectedTime.setHours(hours, minutes, 0, 0);
+
+          const existingTime = new Date(existingIntake.plannedTime);
+
+          // If times don't match, update the intake (unless already completed)
+          if (existingTime.getTime() !== expectedTime.getTime() &&
+              existingIntake.status !== 'completed') {
+            const now = new Date();
+            const status: 'pending' | 'missed' = expectedTime < now ? 'missed' : 'pending';
+
+            await db.intakes.update(existingIntake.id, {
+              plannedTime: expectedTime,
+              status
+            });
+            updated++;
+            console.log(`🔄 Updated intake time for schedule ${schedule.id}`);
+          }
         }
       }
 
-      console.log(`✅ Generated ${created} new intakes for today`);
+      console.log(`✅ Generated ${created} new intakes, updated ${updated} existing intakes for today`);
     } catch (error) {
       console.error('❌ Error generating daily intakes:', error);
     }
